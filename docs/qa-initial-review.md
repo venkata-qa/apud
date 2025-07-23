@@ -68,7 +68,8 @@ This will increase the importance of **pre-release validation and automation**.
 - Unit and API testing in place  
 - Some contract testing (e.g., MSS)  
 - Wiremock used for mocks  
-- CI/CD managed in GitHub and GCP
+- CI/CD managed in GitHub and GCP  
+- No contract testing currently exists *between services* or *with third-party APIs*
 
 ---
 
@@ -76,30 +77,34 @@ This will increase the importance of **pre-release validation and automation**.
 
 There are opportunities to enhance early validation, test automation, and non-functional coverage to support ongoing platform evolution.
 
-| Area                   | Opportunity                                                                 |
-|------------------------|------------------------------------------------------------------------------|
-| Early Testing          | Validate earlier in the lifecycle (e.g. pre-merge, pre-publish)              |
-| Test Ownership         | Support squads in testing their services before integration                  |
-| Shell App Testing      | Automate sample app to test services in isolation                            |
-| UI & E2E Coverage      | Add automation for key flows (Detox, Playwright)                             |
-| Accessibility          | Introduce checks via axe-core, Lighthouse, RN Accessibility Inspector        |
-| Performance Testing    | Monitor bundle size, render times, and API latency                           |
-| Cross-Browser Support  | Validate web variants across target browsers/devices                         |
-| Release Readiness      | Define OAT test criteria and checklists                                      |
-| Risk-Based Testing     | Use FMEA to identify high-risk scenarios and validate failure handling       |
+| Area                         | Opportunity                                                                 |
+|------------------------------|------------------------------------------------------------------------------|
+| Early Testing                | Validate earlier in the lifecycle (e.g. pre-merge, pre-publish)              |
+| Test Ownership               | Support squads in testing their services before integration                  |
+| Shell App Testing            | Automate sample app to test services in isolation                            |
+| UI & E2E Coverage            | Add automation for key flows (Detox, Playwright)                             |
+| Accessibility                | Introduce checks via axe-core, Lighthouse, RN Accessibility Inspector        |
+| Performance Testing          | Monitor bundle size, render times, and API latency                           |
+| Cross-Browser Support        | Validate web variants across target browsers/devices                         |
+| Release Readiness            | Define OAT test criteria and checklists                                      |
+| Risk-Based Testing           | Use FMEA to identify high-risk scenarios and validate failure handling       |
+| Contract Testing (Internal)  | *Currently missing* – introduce contracts between frontend and backend services |
+| Contract Testing (External)  | *Currently missing* – validate integration with third-party APIs              |
 
 ---
 
 ## 🔄 In-Flight & Proposed Enhancements
 
-| Theme                | Initiative                                                                 |
-|----------------------|----------------------------------------------------------------------------|
-| Shift Left Testing   | Validate earlier (PR, CI, pre-publish gates)                               |
-| QA in CI             | Add automated gates for unit, shell app, a11y, and performance tests       |
-| Collaborative QA     | Engage squads in FMEA + OAT planning and implementation                    |
-| Tooling Alignment    | Standardize across Detox, Cypress, k6, Lighthouse, axe-core                |
-| Feedback Visibility  | Add dashboards for test outcomes and regressions                           |
-| Pilot Programs       | Identify 1–2 services for UI test and OTA validation POCs                  |
+| Theme                      | Initiative                                                                     |
+|----------------------------|---------------------------------------------------------------------------------|
+| Shift Left Testing         | Validate earlier (PR, CI, pre-publish gates)                                   |
+| QA in CI                   | Add automated gates for unit, shell app, a11y, and performance tests           |
+| Collaborative QA           | Engage squads in FMEA + OAT planning and implementation                        |
+| Tooling Alignment          | Standardize across Detox, Cypress, k6, Lighthouse, axe-core                    |
+| Feedback Visibility        | Add dashboards for test outcomes and regressions                               |
+| Contract Testing (Internal)| Introduce consumer-driven contracts between frontend modules and backend services |
+| Contract Testing (External)| Define mocks and validation layers for 3rd-party APIs                          |
+| Pilot Programs             | Identify 1–2 services for UI test and OTA validation POCs                      |
 
 ---
 
@@ -112,6 +117,7 @@ There are opportunities to enhance early validation, test automation, and non-fu
 | Enable shell app testing      | Automate NPM package validation                  | [Insert]   |
 | Pilot test automation         | Start with key services (e.g., Questionnaire)    | [Insert]   |
 | Begin FMEA & OAT workshops    | Collaborate on risk and readiness planning       | [Insert]   |
+| Define contract testing scope | Internal and third-party contract strategy       | [Insert]   |
 
 ---
 
@@ -120,4 +126,3 @@ There are opportunities to enhance early validation, test automation, and non-fu
 The program already has a strong foundation in modular architecture, pipelines, and unit testing. These enhancements aim to *build upon that work* — improving test coverage, shifting quality earlier, and preparing for more modular delivery models such as OTA.
 
 By working collaboratively across squads, we can evolve QA into a scalable, efficient, and proactive part of the development lifecycle.
-
