@@ -1,0 +1,27 @@
+Feature: OAuth2 Client Credentials Flow
+
+  Background:
+    * url baseUrl
+    * def clientId = subsClientId
+    * def clientSecret = subsClientSecret
+    * def tokenUrl = baseUrl + '/' + accessTokenUrl
+    * def scope = 'read:org'
+
+  Scenario: Get OAuth2 Token and Call API
+    Given url tokenUrl
+    And header Content-Type = 'application/x-www-form-urlencoded'
+    And form field grant_type = 'client_credentials'
+    And form field client_id = clientId
+    And form field client_secret = clientSecret
+    And form field scope = scope
+    When method post
+    Then status 200
+    * def accessToken = response.access_token
+    * print 'Access Token:', accessToken
+
+    # Use the token in another request
+    Given url baseUrl + '/your-endpoint'
+    And header Authorization = 'Bearer ' + accessToken
+    When method get
+    Then status 200
+    * print response
