@@ -95,13 +95,196 @@ Store the service account JSON as a GitHub secret.
       --audiences="https://${{ secrets.PACT_BROKER_URL }}")
     echo "id_token=$ID_TOKEN" >> $GITHUB_OUTPUT
 
-- name: Test Pact Broker
+- name: Publish pacts to Pact Broker
+  env:
+    PACT_BROKER_BASE_URL: "https://${{ secrets.PACT_BROKER_URL }}"
+    PACT_BROKER_TOKEN: "${{ steps.token.outputs.id_token }}"
   run: |
-    curl -i -H "Authorization: Bearer ${{ steps.token.outputs.id_token }}" \
-      "https://${{ secrets.PACT_BROKER_URL }}/"
+    npx pact-broker publish ./pacts \
+      --consumer-app-version 1.0.0 \
+      --branch main \
+      --broker-base-url "$PACT_BROKER_BASE_URL"
 ```
 
-No Pact Broker username/password/token is needed because IAM protects the endpoint.
+### Using Pact CLI / `npx pact-broker` with IAP
+
+Cloud Run is protected by IAM, so Pact CLI must send a Bearer token.
+
+We use the **IAP Identity Token** as the broker token:
+
+```
+export PACT_BROKER_BASE_URL=https://<CLOUD_RUN_URL>
+export PACT_BROKER_TOKEN=$ID_TOKEN
+
+npx pact-broker publish ./pacts \
+  --consumer-app-version 1.0.0 \
+  --branch main
+```
+
+This works because Pact CLI sends:
+
+```
+Authorization: Bearer <token>
+```
+
+and IAP validates the token before the request reaches Pact Broker.
+
+## Authentication Flow Diagram
+
+```
+    Developer / CI
+         |
+         | (1) Request Pact Broker
+         v
+ +------------------+
+ |  Cloud Run URL   |
+ +------------------+
+         |
+         | (2) Google IAM/IAP checks ID token
+         v
+ +------------------+
+ |    Pact Broker   |
+ +------------------+
+         |
+         | (3) Pact Broker routes to DB
+         v
+ +------------------+
+ |   PostgreSQL     |
+ +------------------+
+```
+
+* If the request has a valid IAP token → allowed
+* If missing → `401 invalid iap credentials: empty token`
+
+---
+
+## Enabling Basic Auth (instead of IAP)
+
+If you want Pact Broker to authenticate directly, disable IAP/Require Auth in Cloud Run and set these environment variables:
+
+```
+PACT_BROKER_BASIC_AUTH_USERNAME=<USER>
+PACT_BROKER_BASIC_AUTH_PASSWORD=<PASSWORD>
+```
+
+Optional read-only credentials:
+
+```
+PACT_BROKER_BASIC_AUTH_READ_ONLY_USERNAME=<USER>
+PACT_BROKER_BASIC_AUTH_READ_ONLY_PASSWORD=<PASSWORD>
+```
+
+Then calls become simple:
+
+```
+export PACT_BROKER_USERNAME=<USER>
+export PACT_BROKER_PASSWORD=<PASSWORD>
+```
+
+---
+
+## Making Cloud Run Internal Only
+
+To block external access and rely only on private networking:
+
+### Option A: Restrict ingress
+
+Set Cloud Run ingress to:
+
+```
+Internal only
+```
+
+### Option B: Use Serverless VPC Connector
+
+Attach a VPC connector, then set:
+
+```
+Egress: All traffic
+```
+
+### Option C: Expose only via Internal Load Balancer
+
+* Cloud Run → Internal HTTP Load Balancer → Private IP
+
+This makes Pact Broker reachable only from your corporate network/VPC.
+
+---
+
+## Troubleshooting CI/CD Authentication
+
+### 401 invalid iap credentials: empty token
+
+Cause:
+
+* No `Authorization: Bearer <token>` header.
+
+Fix:
+
+```
+export PACT_BROKER_TOKEN=$(gcloud auth print-identity-token ...)
+```
+
+### invalid account type for --audiences
+
+You used a **user** account.
+Use a service account:
+
+```
+gcloud auth activate-service-account ...
+```
+
+### Cannot access broker in browser
+
+* You are not logged in with your corporate Google account
+* Your Google IAM permissions are missing
+
+### Pact CLI complains about auth
+
+Use:
+
+```
+export PACT_BROKER_TOKEN=$ID_TOKEN
+```
+
+---
+
+## Deploying to Cloud Run
+
+### Step 1: Build image
+
+```
+docker build -t gcr.io/<PROJECT_ID>/pact-broker .
+```
+
+### Step 2: Push to GCR or Artifact Registry
+
+```
+docker push gcr.io/<PROJECT_ID>/pact-broker
+```
+
+### Step 3: Deploy
+
+```
+gcloud run deploy pact-broker \
+  --image=gcr.io/<PROJECT_ID>/pact-broker \
+  --platform=managed \
+  --region=<REGION> \
+  --allow-unauthenticated  # unless using IAM/IAP
+```
+
+### Step 4: Set environment variables
+
+In Cloud Run UI or CLI:
+
+```
+PACT_BROKER_DATABASE_HOST=<DB_HOST>
+PACT_BROKER_DATABASE_NAME=<DB_NAME>
+PACT_BROKER_DATABASE_USERNAME=<DB_USER>
+PACT_BROKER_DATABASE_PASSWORD=<DB_PASSWORD>
+```
+
+---
 
 ## Common Issues
 
