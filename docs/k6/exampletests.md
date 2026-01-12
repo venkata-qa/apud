@@ -1,4 +1,3 @@
-✅ Example 1 — Simple API Load Test
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 
